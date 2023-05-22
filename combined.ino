@@ -118,6 +118,8 @@ float myArray[9];
 
 
 
+unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
 void setup() {
     SERIAL_PORT_MONITOR.begin(9600);
     while(!Serial){};
@@ -129,7 +131,7 @@ void setup() {
     SERIAL_PORT_MONITOR.println("CAN init ok!");
 }
 
-unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
 
 
 
@@ -175,25 +177,15 @@ for (int i = 0; i < NUM_READINGS; i++) {
 
 
 
-// float fuelPressureAvg = fuelPressureSum / NUM_READINGS;
-// float CoolantPressureAvg = CoolantPressureSum / NUM_READINGS;
-// float OilPressureAvg = OilPressureSum / NUM_READINGS;
-// float boostPressureAvg = boostPressureSum / NUM_READINGS;
-// float temperatureAvg = temperatureSum / NUM_READINGS;
-// float CoolanttemperatureAvg = CoolanttemperatureSum / NUM_READINGS;
-// float OiltemperatureAvg = OiltemperatureSum / NUM_READINGS;
-// float AFRAvg = AFRSum / NUM_READINGS;
-// float AFRRATIO = AFRAvg * 14.7;
-
-float fuelPressureAvg = 22;
-float CoolantPressureAvg =33;
-float OilPressureAvg = 44;
-float boostPressureAvg = 55;
-float temperatureAvg = 111;
-float CoolanttemperatureAvg = 222;
-float OiltemperatureAvg = 333;
-float AFRAvg = 444;
-float AFRRATIO = 9999;
+float fuelPressureAvg = fuelPressureSum / NUM_READINGS;
+float CoolantPressureAvg = CoolantPressureSum / NUM_READINGS;
+float OilPressureAvg = OilPressureSum / NUM_READINGS;
+float boostPressureAvg = boostPressureSum / NUM_READINGS;
+float temperatureAvg = temperatureSum / NUM_READINGS;
+float CoolanttemperatureAvg = CoolanttemperatureSum / NUM_READINGS;
+float OiltemperatureAvg = OiltemperatureSum / NUM_READINGS;
+float AFRAvg = AFRSum / NUM_READINGS;
+float AFRRATIO = AFRAvg * 14.7;
 
 
 Serial.print("Block Temp: ");
@@ -242,45 +234,35 @@ myArray[8]=AFRRATIO;
 //709   AFR               (calculated)
 
 
-
-  union {
-    float f;
-    uint32_t i;
-  } dataConverter;
-
  ////  Set up the initial CAN ID
 //  int canId = 0x701;
-    int canId = 701;
+int canId = 701;
 
- //  Loop through the variables and send the data
-  for (int i = 0; i < 9; i++) {
-  //   Convert the float variable to bytes
-    dataConverter.f = myArray[i];
-    uint8_t dataBytes[4];
-    for (int j = 0; j < 4; j++) {
-      dataBytes[j] = (dataConverter.i >> (8 * j)) & 0xFF;
-    }
-//     Set up the CAN message
-    stmp[0] = 0x0;
-    stmp[1] = 0x0;
-    stmp[2] = 0x0;
-    stmp[3] = dataBytes[3];  //Use the bytes of the integer here
-    stmp[4] = dataBytes[2];
-    stmp[5] = dataBytes[1];
-    stmp[6] = dataBytes[0];
-    stmp[7] = 0; // Use the loop counter as a unique identifier for each variable
+for (int i = 0; i < 9; i++) {
+
+float floatValue = myArray[i];
+unsigned char canMessageBytes[8];
+unsigned char* floatBytes = (unsigned char*)&floatValue;
+
+for (int i = 0; i < 4; i++) {
+  canMessageBytes[i + 0] = floatBytes[i];
+}
+
 
     
 
-CAN.MCP_CAN::sendMsgBuf(canId, 0, 8, stmp);
+CAN.MCP_CAN::sendMsgBuf(canId, 0, 8, canMessageBytes);
 
 
  //    Increment the CAN ID for the next variable
     canId++;
+}
+
+      delay(5000);
   }
   
-  delay(5000);
-}
+
+
 
 
 
